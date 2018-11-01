@@ -3,21 +3,25 @@ package block
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"strings"
 	"time"
 )
 
 // Block represents the structure of the blockchain composition unit
 type Block struct {
-	Index     int
-	Timestamp string
-	BPM       int
-	Hash      string
-	PrevHash  string
+	Index      int
+	Timestamp  string
+	BPM        int
+	Difficulty int
+	Hash       string
+	PrevHash   string
+	Nonce      string
 }
 
 // CalculateHash method uses SHA256 to compute the hash of the new added block
 func (block Block) CalculateHash() string {
-	record := string(block.Index) + block.Timestamp + string(block.BPM) + block.PrevHash
+	record := string(block.Index) + block.Timestamp + string(block.BPM) + block.PrevHash + block.Nonce
 	sha := sha256.New()
 	sha.Write([]byte(record))
 	hashed := sha.Sum(nil)
@@ -25,7 +29,7 @@ func (block Block) CalculateHash() string {
 }
 
 // NextBlock method creates a new block based on the passed BPM argument and the current block
-func (block Block) NextBlock(BPM int) (Block, error) {
+func (block Block) NextBlock(BPM, difficulty int) (Block, error) {
 	var nextBlock Block
 
 	t := time.Now()
@@ -33,7 +37,15 @@ func (block Block) NextBlock(BPM int) (Block, error) {
 	nextBlock.Timestamp = t.String()
 	nextBlock.BPM = BPM
 	nextBlock.PrevHash = block.Hash
-	nextBlock.Hash = nextBlock.CalculateHash()
+	nextBlock.Difficulty = difficulty
+	for i := 0; ; i++ {
+		hex := fmt.Sprintf("%x", i)
+		nextBlock.Nonce += hex
+		nextBlock.Hash = nextBlock.CalculateHash()
+		if nextBlock.isHashValid() {
+			break
+		}
+	}
 	return nextBlock, nil
 }
 
@@ -51,4 +63,9 @@ func IsBlockValid(newBlock, oldBlock Block) bool {
 		return false
 	}
 	return true
+}
+
+func (block Block) isHashValid() bool {
+	prefix := strings.Repeat("0", block.Difficulty)
+	return strings.HasPrefix(block.Hash, prefix)
 }

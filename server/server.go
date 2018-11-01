@@ -19,7 +19,8 @@ type Server struct {
 }
 
 type Message struct {
-	BPM int
+	BPM        int
+	Difficulty int
 }
 
 // NewServer method plays role of a constructor
@@ -76,7 +77,7 @@ func (server *Server) handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	newBlock, err := server.Blockchain[len(server.Blockchain)-1].NextBlock(m.BPM)
+	newBlock, err := server.Blockchain[len(server.Blockchain)-1].NextBlock(m.BPM, m.Difficulty)
 
 	if err != nil {
 		utils.RespondWithJSON(w, r, http.StatusInternalServerError, m)
